@@ -1,0 +1,81 @@
+Task: Build a professional-grade audio denoising system with the following requirements.
+
+Step 1 — Research
+
+Study noise reduction techniques using machine learning and deep learning.
+
+Compare different approaches and choose the best model for optimal performance.
+
+Step 2 — Data Collection
+
+Use high-quality datasets of noisy and clean audio.
+
+Ensure dataset diversity for different noise profiles.
+
+Step 3 — Preprocessing
+
+Accept any audio format from the user.
+
+Convert all audio internally to WAV format.
+
+Normalize volume.
+
+Split into fixed-length chunks for processing.
+
+Step 4 — Model Selection
+
+Choose the most accurate model for denoising 
+Implement for high speed and precision.
+
+Step 5 — Training
+
+Train on noisy vs clean audio pairs.
+
+Make training robust to many different noise types.
+
+Step 6 — Fine-Tuning
+
+Optimize hyperparameters for maximum accuracy.
+
+Include additional noise variations in the training data.
+
+Step 7 — Evaluation
+
+Use Signal-to-Noise Ratio (SNR) and Mean Opinion Score (MOS) for measuring performance.
+
+Step 8 — Deployment
+
+Frontend: React (separate folder named frontend).
+
+Backend: Flask (separate folder named backend).
+
+Follow the NVM architecture.
+
+The frontend and backend must run together when I start the backend 
+Must run flawlessly with no runtime errors.
+
+Step 9 — Groq Cloud API Key Integration
+
+At the point where the ML process completes, ask the user for their Groq Cloud API key.
+
+Use it only to send a report about the denoising process steps (e.g., preprocessing done, model inference complete, audio cleaned).
+
+This API integration is for reporting only, not for running the model.
+
+Step 10 — UI/UX
+
+Professional, futuristic design (no playful elements), must be attractive and a innovative one to seee
+
+Must look like a high-quality internship project.
+
+Step 11 — Innovation Requirement
+
+Include  unique, innovative featureConstraints:
+
+Use only Python for backend logic.
+
+No database or additional backend stack beyond Flask.
+
+Handle all exceptions and errors gracefully.
+
+Must accept and process any audio format perfectly, and the main part it has a lot to error when a audio is upload the process is not going efficimtly , there should not even a single error make it perfect in a sinngle time and also ask me for gthe api key when the part come
