@@ -169,8 +169,14 @@ class AudioDenoiseApp {
             
             if (result.success) {
                 this.showProgress(100, 'Processing completed successfully!');
-                this.showStatus('success', '✅ Audio denoising completed! Report automatically sent to Groq Cloud.');
+                this.showStatus('success', '✅ Fast ML denoising completed! Report sent to Groq Cloud.');
                 this.showActions(['download', 'new']);
+                this.setLoading(false);
+            } else if (response.status === 202) {
+                // Processing in background, retry in 2 seconds
+                setTimeout(() => this.processAudio(), 2000);
+                this.showProgress(75, 'Processing large file, please wait...');
+                return;
             } else {
                 this.showStatus('error', result.error || 'Processing failed');
                 this.hideProgress();
