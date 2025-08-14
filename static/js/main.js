@@ -169,8 +169,8 @@ class AudioDenoiseApp {
             
             if (result.success) {
                 this.showProgress(100, 'Processing completed successfully!');
-                this.showStatus('success', 'Audio processing completed successfully!');
-                this.showApiModal();
+                this.showStatus('success', '✅ Audio denoising completed! Report automatically sent to Groq Cloud.');
+                this.showActions(['download', 'new']);
             } else {
                 this.showStatus('error', result.error || 'Processing failed');
                 this.hideProgress();

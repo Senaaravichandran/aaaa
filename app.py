@@ -162,6 +162,34 @@ def process_audio():
         
         logger.info(f"Audio processing completed for session: {session_id}")
         
+        # Automatically send report to Groq after processing is complete
+        try:
+            from groq_client import GroqReporter
+            
+            # Set the API key in environment
+            os.environ['GROQ_API_KEY'] = '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'
+            
+            groq_client = GroqReporter('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')
+            
+            # Create processing report
+            report_data = {
+                'session_id': session_id,
+                'preprocessing': 'Completed - Audio converted to WAV, normalized, and chunked',
+                'ml_inference': 'Completed - Spectral subtraction and Wiener filtering applied', 
+                'postprocessing': 'Completed - Audio reconstructed and saved as high-quality WAV',
+                'status': 'Success',
+                'filename': uploaded_files[0],
+                'duration': duration,
+                'timestamp': time.strftime('%Y-%m-%d %H:%M:%S')
+            }
+            
+            # Send report to Groq
+            groq_response = groq_client.send_report(report_data)
+            logger.info(f"Automatic report sent to Groq: {groq_response}")
+            
+        except Exception as e:
+            logger.warning(f"Failed to send automatic report to Groq: {str(e)}")
+        
         return jsonify({
             'success': True,
             'message': 'Audio processing completed successfully',
