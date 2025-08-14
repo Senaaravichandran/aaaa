@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Audio Denoising System</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <i data-feather="music"></i>
+                AudioDenoiseAI
+            </div>
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="#home">Home</a></li>
+                    <li><a href="#features">Features</a></li>
+                    <li><a href="#about">About</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Hero Section -->
+        <section class="hero" id="home">
+            <h1>Professional Audio Denoising</h1>
+            <p>
+                Advanced machine learning-powered noise reduction system that delivers professional-grade 
+                audio cleaning with spectral subtraction and intelligent filtering algorithms.
+            </p>
+        </section>
+
+        <!-- Processing Card -->
+        <div class="processing-card">
+            <!-- Upload Area -->
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">
+                    <i data-feather="upload-cloud"></i>
+                </div>
+                <div class="upload-text" id="uploadText">
+                    Click to select audio file or drag and drop
+                </div>
+                <div class="upload-hint">
+                    Supports WAV, MP3, FLAC, M4A, AAC, OGG, WMA, AIFF (Max: 100MB)
+                </div>
+            </div>
+            
+            <input type="file" id="fileInput" class="file-input" accept="audio/*">
+            
+            <!-- File Information -->
+            <div id="fileInfo" class="file-info hidden"></div>
+            
+            <!-- Status Messages -->
+            <div id="statusContainer" class="hidden"></div>
+            
+            <!-- Progress Bar -->
+            <div id="progressContainer" class="progress-container hidden">
+                <div class="progress-bar">
+                    <div id="progressBar" class="progress-fill"></div>
+                </div>
+                <div id="progressText" class="progress-text">Processing...</div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="flex gap-2 justify-center mt-2">
+                <button id="uploadBtn" class="btn btn-secondary">
+                    <i data-feather="upload"></i>
+                    Select File
+                </button>
+                <button id="processBtn" class="btn btn-primary" disabled>
+                    <i data-feather="play"></i>
+                    Process Audio
+                </button>
+                <button id="downloadBtn" class="btn btn-secondary" disabled>
+                    <i data-feather="download"></i>
+                    Download
+                </button>
+                <button id="resetBtn" class="btn btn-secondary">
+                    <i data-feather="refresh-cw"></i>
+                    Reset
+                </button>
+            </div>
+        </div>
+        
+        <!-- Features Section -->
+        <section id="features" class="features-section">
+            <h2 class="text-center mb-2">Advanced Features</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i data-feather="cpu"></i>
+                    </div>
+                    <h3>ML-Powered Processing</h3>
+                    <p>Advanced spectral subtraction and Wiener filtering algorithms for superior noise reduction.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i data-feather="file-audio"></i>
+                    </div>
+                    <h3>Universal Format Support</h3>
+                    <p>Supports all major audio formats with automatic conversion and normalization.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i data-feather="zap"></i>
+                    </div>
+                    <h3>Real-time Processing</h3>
+                    <p>Fast, efficient processing with live progress tracking and status updates.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i data-feather="shield"></i>
+                    </div>
+                    <h3>Professional Grade</h3>
+                    <p>Enterprise-level audio processing suitable for professional audio production.</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- API Key Modal -->
+    <div id="apiModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i data-feather="key"></i>
+                    Groq Cloud API Integration
+                </h3>
+                <button id="closeModal" class="close-btn">
+                    <i data-feather="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2">
+                    Audio processing completed successfully! Please provide your Groq Cloud API key 
+                    to send a detailed processing report.
+                </p>
+                <div class="form-group">
+                    <label for="apiKeyInput" class="form-label">Groq Cloud API Key</label>
+                    <input 
+                        type="password" 
+                        id="apiKeyInput" 
+                        class="form-input" 
+                        placeholder="Enter your Groq API key..."
+                        autocomplete="off"
+                    >
+                </div>
+                <div class="flex gap-2 justify-center">
+                    <button id="submitApiKey" class="btn btn-primary">
+                        <i data-feather="send"></i>
+                        Send Report
+                    </button>
+                    <button id="closeModal" class="btn btn-secondary">
+                        <i data-feather="x"></i>
+                        Skip
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Additional Styles for Features Section -->
+    <style>
+        .features-section {
+            margin: 4rem 0;
+        }
+        
+        .features-section h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(45deg, var(--primary-color), var(--text-primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+        
+        .feature-card {
+            background: rgba(26, 26, 26, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--primary-color);
+            box-shadow: 0 8px 32px rgba(0, 212, 255, 0.2);
+        }
+        
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(45deg, var(--primary-color), var(--accent-color));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+        }
+        
+        .feature-icon i {
+            width: 24px;
+            height: 24px;
+            color: white;
+        }
+        
+        .feature-card h3 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+        
+        .feature-card p {
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+    </style>
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+        // Initialize Feather Icons
+        feather.replace();
+    </script>
+</body>
+</html>
