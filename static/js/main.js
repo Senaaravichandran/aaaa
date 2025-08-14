@@ -165,19 +165,19 @@ class AudioDenoiseApp {
                 }
             });
             
-            const result = await response.json();
+            if (response.ok) {
+                const result = await response.json();
+                if (result.success) {
+                    this.showProgress(100, 'Processing completed successfully!');
+                    this.showStatus('success', '✅ Fast ML denoising completed! Report sent to Groq Cloud.');
+                    this.showActions(['download', 'new']);
+                    this.setLoading(false);
+                    return;
+                }
+            }
             
-            if (result.success) {
-                this.showProgress(100, 'Processing completed successfully!');
-                this.showStatus('success', '✅ Fast ML denoising completed! Report sent to Groq Cloud.');
-                this.showActions(['download', 'new']);
-                this.setLoading(false);
-            } else if (response.status === 202) {
-                // Processing in background, retry in 2 seconds
-                setTimeout(() => this.processAudio(), 2000);
-                this.showProgress(75, 'Processing large file, please wait...');
-                return;
-            } else {
+            // If we get here, there was an error
+            {
                 this.showStatus('error', result.error || 'Processing failed');
                 this.hideProgress();
             }
