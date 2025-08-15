@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useDropzone } from 'react-dropzone';
-import { Upload, Play, Download, RefreshCw, File, AlertCircle } from 'react-feather';
+import { Upload, Play, Download, RefreshCw, File, AlertCircle, Music, Zap } from 'react-feather';
 import { uploadFile, processAudio, downloadFile, resetSession } from '../utils/api';
 
 const AudioUploader = ({
@@ -17,7 +17,7 @@ const AudioUploader = ({
   const [uploadProgress, setUploadProgress] = useState(0);
 
   const validateFile = (file) => {
-    const maxSize = 100 * 1024 * 1024; // 100MB (matches your UI text)
+    const maxSize = 100 * 1024 * 1024; // 100MB
     const allowedTypes = [
       'audio/wav', 'audio/wave', 'audio/x-wav',
       'audio/mp3', 'audio/mpeg', 'audio/mp4',
@@ -171,7 +171,7 @@ const AudioUploader = ({
             }}
             transition={{ duration: 0.3 }}
           >
-            <Upload size={48} />
+            {isDragActive ? <Zap size={48} /> : <Music size={48} />}
           </motion.div>
           
           <div className="upload-text">
