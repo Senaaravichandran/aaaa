@@ -1,7 +1,18 @@
 import React, { useCallback, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useDropzone } from 'react-dropzone';
-import { Upload, Play, Download, RefreshCw, File, AlertCircle } from 'react-feather';
+import { 
+  Upload, 
+  Play, 
+  Download, 
+  RefreshCw, 
+  File, 
+  AlertCircle,
+  Music,
+  Volume2,
+  Clock,
+  CheckCircle
+} from 'react-feather';
 import { uploadFile, processAudio, downloadFile, resetSession } from '../utils/api';
 
 const AudioUploader = ({
@@ -17,7 +28,7 @@ const AudioUploader = ({
   const [uploadProgress, setUploadProgress] = useState(0);
 
   const validateFile = (file) => {
-    const maxSize = 100 * 1024 * 1024; // 100MB (matches your UI text)
+    const maxSize = 100 * 1024 * 1024; // 100MB
     const allowedTypes = [
       'audio/wav', 'audio/wave', 'audio/x-wav',
       'audio/mp3', 'audio/mpeg', 'audio/mp4',
@@ -154,50 +165,58 @@ const AudioUploader = ({
   return (
     <div className="audio-uploader">
       {/* Upload Area */}
-      <motion.div
-        {...getRootProps()}
-        className={`upload-area ${isDragActive ? 'drag-active' : ''}`}
-        whileHover={{ scale: 1.01 }}
-        whileTap={{ scale: 0.99 }}
-      >
-        <input {...getInputProps()} />
-        
-        <div className="upload-content">
-          <motion.div 
-            className="upload-icon"
-            animate={{ 
-              scale: isDragActive ? 1.2 : 1,
-              rotate: isDragActive ? 360 : 0 
-            }}
-            transition={{ duration: 0.3 }}
-          >
-            <Upload size={48} />
-          </motion.div>
+      {!safeSessionData.fileUploaded && (
+        <motion.div
+          {...getRootProps()}
+          className={`upload-area ${isDragActive ? 'drag-active' : ''}`}
+          whileHover={{ scale: 1.01 }}
+          whileTap={{ scale: 0.99 }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <input {...getInputProps()} />
           
-          <div className="upload-text">
-            {isDragActive 
-              ? "Drop your audio file here..." 
-              : "Click to select audio file or drag and drop"
-            }
-          </div>
-          
-          <div className="upload-hint">
-            Supports WAV, MP3, FLAC, M4A, AAC, OGG, WMA, AIFF (Max: 100MB)
-          </div>
-          
-          {uploadProgress > 0 && uploadProgress < 100 && (
-            <div className="upload-progress">
-              <div className="progress-bar">
-                <div 
-                  className="progress-fill" 
-                  style={{ width: `${uploadProgress}%` }}
-                />
+          <div className="upload-content">
+            <motion.div 
+              className="upload-icon"
+              animate={{ 
+                scale: isDragActive ? 1.2 : 1,
+                rotate: isDragActive ? 360 : 0 
+              }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className="upload-icon-container">
+                <Music size={48} />
+                <Upload size={24} className="upload-overlay" />
               </div>
-              <div className="progress-text">{Math.round(uploadProgress)}% uploaded</div>
+            </motion.div>
+            
+            <div className="upload-text">
+              {isDragActive 
+                ? "Drop your audio file here..." 
+                : "Click to select audio file or drag and drop"
+              }
             </div>
-          )}
-        </div>
-      </motion.div>
+            
+            <div className="upload-hint">
+              Supports WAV, MP3, FLAC, M4A, AAC, OGG, WMA, AIFF (Max: 100MB)
+            </div>
+            
+            {uploadProgress > 0 && uploadProgress < 100 && (
+              <div className="upload-progress">
+                <div className="progress-bar">
+                  <div 
+                    className="progress-fill" 
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+                <div className="progress-text">{Math.round(uploadProgress)}% uploaded</div>
+              </div>
+            )}
+          </div>
+        </motion.div>
+      )}
 
       {/* File Information */}
       {safeSessionData.fileInfo && (
@@ -208,15 +227,23 @@ const AudioUploader = ({
           transition={{ duration: 0.5 }}
         >
           <div className="file-info-header">
-            <File className="file-icon" />
+            <div className="file-icon-container">
+              <File className="file-icon" />
+            </div>
             <div className="file-details">
               <div className="file-name">{safeSessionData.fileName}</div>
               <div className="file-stats">
                 {formatFileSize(safeSessionData.fileInfo.file_size)} • 
-                {safeSessionData.fileInfo.format} • 
+                {safeSessionData.fileInfo.format?.toUpperCase()} • 
                 {safeSessionData.fileInfo.duration?.toFixed(1)}s
               </div>
             </div>
+            {safeSessionData.fileProcessed && (
+              <div className="file-status">
+                <CheckCircle size={20} className="status-icon success" />
+                <span>Processed</span>
+              </div>
+            )}
           </div>
           
           <div className="file-info-grid">
@@ -226,15 +253,15 @@ const AudioUploader = ({
             </div>
             <div className="info-item">
               <span className="info-label">Sample Rate:</span>
-              <span className="info-value">{safeSessionData.fileInfo.sample_rate} Hz</span>
+              <span className="info-value">{safeSessionData.fileInfo.sample_rate || 'N/A'} Hz</span>
             </div>
             <div className="info-item">
               <span className="info-label">Channels:</span>
-              <span className="info-value">{safeSessionData.fileInfo.channels}</span>
+              <span className="info-value">{safeSessionData.fileInfo.channels || 'N/A'}</span>
             </div>
             <div className="info-item">
               <span className="info-label">Format:</span>
-              <span className="info-value">{safeSessionData.fileInfo.format}</span>
+              <span className="info-value">{safeSessionData.fileInfo.format?.toUpperCase()}</span>
             </div>
           </div>
         </motion.div>

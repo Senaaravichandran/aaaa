@@ -1,6 +1,15 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle, AlertCircle, Clock, Zap } from 'react-feather';
+import { 
+  CheckCircle, 
+  AlertCircle, 
+  Clock, 
+  Zap, 
+  Settings,
+  Waveform,
+  Volume2,
+  Play
+} from 'react-feather';
 
 const ProcessingStatus = ({ processingState, sessionData }) => {
   const getStatusIcon = (status) => {
@@ -31,9 +40,36 @@ const ProcessingStatus = ({ processingState, sessionData }) => {
     }
   };
 
+  const getProcessingSteps = () => [
+    { 
+      step: 'Preprocessing', 
+      threshold: 20, 
+      icon: <Settings size={16} />,
+      description: 'Analyzing audio structure'
+    },
+    { 
+      step: 'Noise Analysis', 
+      threshold: 40, 
+      icon: <Waveform size={16} />,
+      description: 'Identifying noise patterns'
+    },
+    { 
+      step: 'ML Denoising', 
+      threshold: 70, 
+      icon: <Zap size={16} />,
+      description: 'Applying AI algorithms'
+    },
+    { 
+      step: 'Output Generation', 
+      threshold: 90, 
+      icon: <Volume2 size={16} />,
+      description: 'Creating clean audio'
+    }
+  ];
+
   return (
     <div className="processing-status">
-      {/* Progress Bar */}
+      {/* Progress Section */}
       <AnimatePresence>
         {processingState.isProcessing && (
           <motion.div 
@@ -44,7 +80,10 @@ const ProcessingStatus = ({ processingState, sessionData }) => {
             transition={{ duration: 0.5 }}
           >
             <div className="progress-header">
-              <span className="progress-title">Processing Audio</span>
+              <div className="progress-title-container">
+                <Play className="progress-icon" />
+                <span className="progress-title">Processing Audio</span>
+              </div>
               <span className="progress-percentage">{Math.round(processingState.progress)}%</span>
             </div>
             
@@ -62,17 +101,15 @@ const ProcessingStatus = ({ processingState, sessionData }) => {
               {processingState.message}
             </div>
             
-            {/* Processing Steps Visualization */}
+            {/* Processing Steps */}
             <div className="processing-steps">
-              {[
-                { step: 'Preprocessing', threshold: 20 },
-                { step: 'Noise Analysis', threshold: 40 },
-                { step: 'ML Denoising', threshold: 70 },
-                { step: 'Output Generation', threshold: 90 }
-              ].map((item, index) => (
-                <div 
+              {getProcessingSteps().map((item, index) => (
+                <motion.div 
                   key={index}
                   className={`step ${processingState.progress >= item.threshold ? 'completed' : ''}`}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.3, delay: index * 0.1 }}
                 >
                   <div className="step-indicator">
                     {processingState.progress >= item.threshold ? (
@@ -81,8 +118,14 @@ const ProcessingStatus = ({ processingState, sessionData }) => {
                       <div className="step-number">{index + 1}</div>
                     )}
                   </div>
-                  <div className="step-label">{item.step}</div>
-                </div>
+                  <div className="step-content">
+                    <div className="step-label">{item.step}</div>
+                    <div className="step-description">{item.description}</div>
+                  </div>
+                  <div className="step-icon">
+                    {item.icon}
+                  </div>
+                </motion.div>
               ))}
             </div>
           </motion.div>
@@ -113,7 +156,10 @@ const ProcessingStatus = ({ processingState, sessionData }) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          <div className="stats-title">Processing Results</div>
+          <div className="stats-header">
+            <CheckCircle className="stats-icon" />
+            <div className="stats-title">Processing Complete</div>
+          </div>
           <div className="stats-grid">
             <div className="stat-item">
               <div className="stat-value">100%</div>
@@ -135,7 +181,7 @@ const ProcessingStatus = ({ processingState, sessionData }) => {
         </motion.div>
       )}
 
-      {/* Real-time Audio Visualization (Placeholder) */}
+      {/* Audio Visualization */}
       {processingState.isProcessing && (
         <motion.div 
           className="audio-visualizer"
@@ -144,28 +190,31 @@ const ProcessingStatus = ({ processingState, sessionData }) => {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.5 }}
         >
+          <div className="visualizer-header">
+            <Waveform className="visualizer-icon" />
+            <span>Real-time Processing</span>
+          </div>
           <div className="visualizer-bars">
-            {[...Array(20)].map((_, index) => (
+            {[...Array(24)].map((_, index) => (
               <motion.div
                 key={index}
                 className="visualizer-bar"
                 animate={{
                   height: [
                     Math.random() * 30 + 10,
-                    Math.random() * 50 + 20,
+                    Math.random() * 60 + 20,
                     Math.random() * 30 + 10
                   ]
                 }}
                 transition={{
-                  duration: 0.8,
+                  duration: 1.2,
                   repeat: Infinity,
                   repeatType: "reverse",
-                  delay: index * 0.05
+                  delay: index * 0.03
                 }}
               />
             ))}
           </div>
-          <div className="visualizer-label">Real-time Processing</div>
         </motion.div>
       )}
     </div>

@@ -30,13 +30,13 @@ def start_react_dev_server():
             subprocess.run(['npm', 'install'], cwd=frontend_path, check=True)
         
         # Start React development server
-        logger.info("Starting React development server on port 5000...")
+        logger.info("Starting React development server on port 3000...")
         react_process = subprocess.Popen(
             ['npm', 'start'],
             cwd=frontend_path,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            env={**os.environ, 'BROWSER': 'none', 'PORT': '5000'}
+            env={**os.environ, 'BROWSER': 'none', 'PORT': '3000'}
         )
         
         return react_process
@@ -51,8 +51,8 @@ def start_react_dev_server():
 def start_flask_server():
     """Start the Flask backend server"""
     try:
-        logger.info("Starting Flask backend server on port 8000...")
-        app.run(host='0.0.0.0', port=8000, debug=False, use_reloader=False)
+        logger.info("Starting Flask backend server on port 8001...")
+        app.run(host='0.0.0.0', port=8001, debug=False, use_reloader=False)
     except Exception as e:
         logger.error(f"Failed to start Flask server: {str(e)}")
 
@@ -90,9 +90,9 @@ def main():
     # Wait a moment for React to start
     if react_process:
         time.sleep(3)
-        logger.info("✅ React frontend available at: http://localhost:5000")
+        logger.info("✅ React frontend available at: http://localhost:3000")
     
-    logger.info("✅ Flask backend available at: http://localhost:8000")
+    logger.info("✅ Flask backend available at: http://localhost:8001")
     logger.info("🎵 Professional Audio Denoising System is ready!")
     logger.info("📝 Upload audio files, process with ML denoising, and download clean results")
     
