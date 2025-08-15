@@ -1,6 +1,6 @@
 // API utilities for the Professional Audio Denoising System
 
-const API_BASE_URL = '/api';
+const API_BASE_URL = 'http://localhost:5000/api';
 
 // Generic API request handler
 const apiRequest = async (endpoint, options = {}) => {

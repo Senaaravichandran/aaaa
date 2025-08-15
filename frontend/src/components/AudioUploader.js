@@ -14,83 +14,96 @@ const AudioUploader = ({
   sessionData,
   processingState
 }) => {
-  const [isDragging, setIsDragging] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
-  const onDrop = useCallback(async (acceptedFiles, rejectedFiles) => {
-    setIsDragging(false);
-    
-    if (rejectedFiles.length > 0) {
-      const error = rejectedFiles[0].errors[0];
-      onProcessingError(`File rejected: ${error.message}`);
-      return;
+  const validateFile = (file) => {
+    const maxSize = 100 * 1024 * 1024; // 100MB (matches your UI text)
+    const allowedTypes = [
+      'audio/wav', 'audio/wave', 'audio/x-wav',
+      'audio/mp3', 'audio/mpeg', 'audio/mp4',
+      'audio/flac', 'audio/x-flac',
+      'audio/m4a', 'audio/mp4a-latm',
+      'audio/aac', 'audio/aacp',
+      'audio/ogg', 'audio/vorbis',
+      'audio/x-ms-wma',
+      'audio/aiff', 'audio/x-aiff'
+    ];
+
+    if (file.size > maxSize) {
+      throw new Error('File is too large. Maximum size is 100MB.');
     }
 
-    if (acceptedFiles.length > 0) {
-      const file = acceptedFiles[0];
-      await handleFileUpload(file);
+    if (!allowedTypes.some(type => file.type.includes(type.split('/')[1]) || file.type === type)) {
+      throw new Error('Unsupported file format. Please upload WAV, MP3, FLAC, M4A, AAC, OGG, WMA, or AIFF files.');
     }
-  }, []);
 
-  const {
-    getRootProps,
-    getInputProps,
-    isDragActive
-  } = useDropzone({
-    onDrop,
-    onDragEnter: () => setIsDragging(true),
-    onDragLeave: () => setIsDragging(false),
-    accept: {
-      'audio/*': ['.wav', '.mp3', '.flac', '.m4a', '.aac', '.ogg', '.wma', '.aiff']
-    },
-    maxSize: 100 * 1024 * 1024, // 100MB
-    multiple: false
-  });
+    return true;
+  };
 
-  const handleFileUpload = async (file) => {
+  const handleFileUpload = useCallback(async (file) => {
     try {
       setUploadProgress(0);
-      onProcessingProgress(10, 'Uploading file...');
+      onProcessingProgress?.(10, 'Uploading file...');
 
       const result = await uploadFile(file, (progress) => {
         setUploadProgress(progress);
-        onProcessingProgress(progress * 0.3, `Uploading... ${Math.round(progress)}%`);
+        onProcessingProgress?.(progress * 0.3, `Uploading... ${Math.round(progress)}%`);
       });
 
       if (result.success) {
-        onFileUpload(result);
+        onFileUpload?.(result);
         setUploadProgress(100);
       } else {
-        onProcessingError(result.error || 'Upload failed');
+        onProcessingError?.(result.error || 'Upload failed');
       }
     } catch (error) {
       console.error('Upload error:', error);
-      onProcessingError('Upload failed. Please try again.');
+      onProcessingError?.('Upload failed. Please try again.');
     }
-  };
+  }, [onFileUpload, onProcessingProgress, onProcessingError]);
+
+  const onDrop = useCallback(async (acceptedFiles) => {
+    const file = acceptedFiles[0];
+    if (!file) return;
+    
+    try {
+      validateFile(file);
+      await handleFileUpload(file);
+    } catch (error) {
+      onProcessingError?.(error.message);
+    }
+  }, [handleFileUpload, onProcessingError]);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({ 
+    onDrop,
+    accept: {
+      'audio/*': ['.wav', '.mp3', '.flac', '.m4a', '.aac', '.ogg', '.wma', '.aiff']
+    },
+    multiple: false
+  });
 
   const handleProcess = async () => {
     try {
-      onProcessingStart();
+      onProcessingStart?.();
       
       // Simulate processing steps with progress updates
-      onProcessingProgress(20, 'Preprocessing audio...');
+      onProcessingProgress?.(20, 'Preprocessing audio...');
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      onProcessingProgress(40, 'Applying noise reduction...');
+      onProcessingProgress?.(40, 'Applying noise reduction...');
       const result = await processAudio();
       
       if (result.success) {
-        onProcessingProgress(80, 'Finalizing output...');
+        onProcessingProgress?.(80, 'Finalizing output...');
         await new Promise(resolve => setTimeout(resolve, 500));
         
-        onProcessingComplete(result);
+        onProcessingComplete?.(result);
       } else {
-        onProcessingError(result.error || 'Processing failed');
+        onProcessingError?.(result.error || 'Processing failed');
       }
     } catch (error) {
       console.error('Processing error:', error);
-      onProcessingError('Processing failed. Please try again.');
+      onProcessingError?.('Processing failed. Please try again.');
     }
   };
 
@@ -99,18 +112,18 @@ const AudioUploader = ({
       await downloadFile();
     } catch (error) {
       console.error('Download error:', error);
-      onProcessingError('Download failed. Please try again.');
+      onProcessingError?.('Download failed. Please try again.');
     }
   };
 
   const handleReset = async () => {
     try {
       await resetSession();
-      onReset();
+      onReset?.();
       setUploadProgress(0);
     } catch (error) {
       console.error('Reset error:', error);
-      onProcessingError('Reset failed. Please try again.');
+      onProcessingError?.('Reset failed. Please try again.');
     }
   };
 
@@ -122,12 +135,28 @@ const AudioUploader = ({
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  // Default values to prevent errors
+  const safeSessionData = {
+    fileInfo: null,
+    fileName: '',
+    fileUploaded: false,
+    fileProcessed: false,
+    ...sessionData
+  };
+
+  const safeProcessingState = {
+    isProcessing: false,
+    status: '',
+    message: '',
+    ...processingState
+  };
+
   return (
     <div className="audio-uploader">
       {/* Upload Area */}
       <motion.div
         {...getRootProps()}
-        className={`upload-area ${isDragActive || isDragging ? 'drag-active' : ''}`}
+        className={`upload-area ${isDragActive ? 'drag-active' : ''}`}
         whileHover={{ scale: 1.01 }}
         whileTap={{ scale: 0.99 }}
       >
@@ -171,7 +200,7 @@ const AudioUploader = ({
       </motion.div>
 
       {/* File Information */}
-      {sessionData.fileInfo && (
+      {safeSessionData.fileInfo && (
         <motion.div 
           className="file-info"
           initial={{ opacity: 0, y: 20 }}
@@ -181,11 +210,11 @@ const AudioUploader = ({
           <div className="file-info-header">
             <File className="file-icon" />
             <div className="file-details">
-              <div className="file-name">{sessionData.fileName}</div>
+              <div className="file-name">{safeSessionData.fileName}</div>
               <div className="file-stats">
-                {formatFileSize(sessionData.fileInfo.file_size)} • 
-                {sessionData.fileInfo.format} • 
-                {sessionData.fileInfo.duration?.toFixed(1)}s
+                {formatFileSize(safeSessionData.fileInfo.file_size)} • 
+                {safeSessionData.fileInfo.format} • 
+                {safeSessionData.fileInfo.duration?.toFixed(1)}s
               </div>
             </div>
           </div>
@@ -193,19 +222,19 @@ const AudioUploader = ({
           <div className="file-info-grid">
             <div className="info-item">
               <span className="info-label">Duration:</span>
-              <span className="info-value">{sessionData.fileInfo.duration?.toFixed(2)}s</span>
+              <span className="info-value">{safeSessionData.fileInfo.duration?.toFixed(2)}s</span>
             </div>
             <div className="info-item">
               <span className="info-label">Sample Rate:</span>
-              <span className="info-value">{sessionData.fileInfo.sample_rate} Hz</span>
+              <span className="info-value">{safeSessionData.fileInfo.sample_rate} Hz</span>
             </div>
             <div className="info-item">
               <span className="info-label">Channels:</span>
-              <span className="info-value">{sessionData.fileInfo.channels}</span>
+              <span className="info-value">{safeSessionData.fileInfo.channels}</span>
             </div>
             <div className="info-item">
               <span className="info-label">Format:</span>
-              <span className="info-value">{sessionData.fileInfo.format}</span>
+              <span className="info-value">{safeSessionData.fileInfo.format}</span>
             </div>
           </div>
         </motion.div>
@@ -215,12 +244,12 @@ const AudioUploader = ({
       <div className="action-buttons">
         <motion.button
           className="btn btn-primary"
-          disabled={!sessionData.fileUploaded || processingState.isProcessing}
+          disabled={!safeSessionData.fileUploaded || safeProcessingState.isProcessing}
           onClick={handleProcess}
-          whileHover={{ scale: processingState.isProcessing ? 1 : 1.05 }}
-          whileTap={{ scale: processingState.isProcessing ? 1 : 0.95 }}
+          whileHover={{ scale: safeProcessingState.isProcessing ? 1 : 1.05 }}
+          whileTap={{ scale: safeProcessingState.isProcessing ? 1 : 0.95 }}
         >
-          {processingState.isProcessing ? (
+          {safeProcessingState.isProcessing ? (
             <>
               <div className="loading-spinner" />
               Processing...
@@ -235,10 +264,10 @@ const AudioUploader = ({
 
         <motion.button
           className="btn btn-secondary"
-          disabled={!sessionData.fileProcessed}
+          disabled={!safeSessionData.fileProcessed}
           onClick={handleDownload}
-          whileHover={{ scale: sessionData.fileProcessed ? 1.05 : 1 }}
-          whileTap={{ scale: sessionData.fileProcessed ? 0.95 : 1 }}
+          whileHover={{ scale: safeSessionData.fileProcessed ? 1.05 : 1 }}
+          whileTap={{ scale: safeSessionData.fileProcessed ? 0.95 : 1 }}
         >
           <Download size={20} />
           Download
@@ -247,9 +276,9 @@ const AudioUploader = ({
         <motion.button
           className="btn btn-outline"
           onClick={handleReset}
-          disabled={processingState.isProcessing}
-          whileHover={{ scale: processingState.isProcessing ? 1 : 1.05 }}
-          whileTap={{ scale: processingState.isProcessing ? 1 : 0.95 }}
+          disabled={safeProcessingState.isProcessing}
+          whileHover={{ scale: safeProcessingState.isProcessing ? 1 : 1.05 }}
+          whileTap={{ scale: safeProcessingState.isProcessing ? 1 : 0.95 }}
         >
           <RefreshCw size={20} />
           Reset
@@ -257,7 +286,7 @@ const AudioUploader = ({
       </div>
 
       {/* Processing Errors */}
-      {processingState.status === 'error' && (
+      {safeProcessingState.status === 'error' && (
         <motion.div 
           className="error-message"
           initial={{ opacity: 0, scale: 0.9 }}
@@ -265,7 +294,7 @@ const AudioUploader = ({
           transition={{ duration: 0.3 }}
         >
           <AlertCircle className="error-icon" />
-          <span>{processingState.message}</span>
+          <span>{safeProcessingState.message}</span>
         </motion.div>
       )}
     </div>
