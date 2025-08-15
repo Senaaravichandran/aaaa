@@ -1,6 +1,6 @@
 // API utilities for the Professional Audio Denoising System
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = 'http://localhost:8001/api';
 
 // Generic API request handler
 const apiRequest = async (endpoint, options = {}) => {
@@ -49,7 +49,7 @@ const apiRequest = async (endpoint, options = {}) => {
 // Upload audio file
 export const uploadFile = async (file, onProgress = null) => {
   const formData = new FormData();
-  formData.append('file', file);
+  formData.append('file', file); // Use 'file' field name to match backend
 
   // Create a promise that tracks upload progress
   return new Promise((resolve, reject) => {
@@ -159,7 +159,7 @@ export const validateAudioFile = (file) => {
   ];
 
   const fileExtension = file.name.split('.').pop().toLowerCase();
-  const maxSize = 100 * 1024 * 1024; // 100MB
+  const maxSize = 500 * 1024 * 1024; // 500MB
 
   // Check file type
   if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension)) {
@@ -173,7 +173,7 @@ export const validateAudioFile = (file) => {
   if (file.size > maxSize) {
     return {
       valid: false,
-      error: 'File size too large. Maximum size is 100MB.'
+      error: 'File size too large. Maximum size is 500MB.'
     };
   }
 
