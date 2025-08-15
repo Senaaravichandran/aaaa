@@ -14,9 +14,8 @@ logger = logging.getLogger(__name__)
 # Store process status
 process_status = {}
 
-app = Flask(__name__)
-app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key-change-in-prod")
-CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}}, supports_credentials=True)
+# Import the main app from app.py
+from app import app
 
 # Configuration
 UPLOAD_FOLDER = 'uploads'
@@ -133,13 +132,17 @@ def validate_audio_length(file_path):
 @app.route('/api/upload', methods=['POST'])
 def upload():
     try:
-        # Check if file was provided
-        if 'audio' not in request.files:
-            return jsonify({'error': 'No audio file provided'}), 400
-            
-        file = request.files['audio']
-        if file.filename == '':
-            return jsonify({'error': 'No selected file'}), 400
+        logger.info("Processing upload request")
+        
+        # Check if file was provided (support both 'file' and 'audio' field names)
+        file = None
+        if 'file' in request.files:
+            file = request.files['file']
+        elif 'audio' in request.files:
+            file = request.files['audio']
+        
+        if not file or file.filename == '':
+            return jsonify({'error': 'No file provided'}), 400
             
         if not allowed_file(file.filename):
             return jsonify({'error': 'File type not supported. Please upload MP3, WAV, FLAC, M4A, AAC, OGG, WMA, or AIFF files.'}), 400
@@ -161,21 +164,35 @@ def upload():
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             os.rename(temp_filepath, filepath)
 
+            # Create session
+            session_id = str(uuid.uuid4())[:8]
+            session['session_id'] = session_id
+            
+            # Get file info
+            file_size = os.path.getsize(filepath)
+            
             # Initialize process status
-            process_id = str(uuid.uuid4().hex)
-            process_status[process_id] = {
-                'status': 'processing',
+            process_status[session_id] = {
+                'status': 'uploaded',
                 'filename': filename,
-                'original_name': file.filename
+                'original_name': file.filename,
+                'file_size': file_size
             }
 
-            # Start processing in background
-            threading.Thread(target=process_audio, args=(filepath, process_id)).start()
+            logger.info(f"Upload complete: {session_id} ({file_size} bytes)")
 
             return jsonify({
-                'status': 'success',
-                'message': 'File uploaded successfully',
-                'id': process_id
+                'success': True,
+                'session_id': session_id,
+                'filename': file.filename,
+                'file_size': file_size,
+                'file_info': {
+                    'file_size': file_size,
+                    'format': file.filename.rsplit('.', 1)[1].lower(),
+                    'duration': None,  # Will be calculated during processing
+                    'sample_rate': None,
+                    'channels': None
+                }
             })
             
         except Exception as e:
