@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useDropzone } from 'react-dropzone';
-import { Upload, Play, Download, RefreshCw, File, AlertCircle } from 'react-feather';
+import { Upload, Play, Download, RefreshCw, File, AlertCircle, CheckCircle } from 'react-feather';
 import { uploadFile, processAudio, downloadFile, resetSession } from '../utils/api';
 
 const AudioUploader = ({
@@ -15,9 +15,10 @@ const AudioUploader = ({
   processingState
 }) => {
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
 
   const validateFile = (file) => {
-    const maxSize = 100 * 1024 * 1024; // 100MB (matches your UI text)
+    const maxSize = 500 * 1024 * 1024; // 500MB (matches backend)
     const allowedTypes = [
       'audio/wav', 'audio/wave', 'audio/x-wav',
       'audio/mp3', 'audio/mpeg', 'audio/mp4',
@@ -30,7 +31,7 @@ const AudioUploader = ({
     ];
 
     if (file.size > maxSize) {
-      throw new Error('File is too large. Maximum size is 100MB.');
+      throw new Error('File is too large. Maximum size is 500MB.');
     }
 
     if (!allowedTypes.some(type => file.type.includes(type.split('/')[1]) || file.type === type)) {
@@ -42,6 +43,7 @@ const AudioUploader = ({
 
   const handleFileUpload = useCallback(async (file) => {
     try {
+      setIsUploading(true);
       setUploadProgress(0);
       onProcessingProgress?.(10, 'Uploading file...');
 
@@ -53,12 +55,15 @@ const AudioUploader = ({
       if (result.success) {
         onFileUpload?.(result);
         setUploadProgress(100);
+        onProcessingProgress?.(30, 'File uploaded successfully!');
       } else {
         onProcessingError?.(result.error || 'Upload failed');
       }
     } catch (error) {
       console.error('Upload error:', error);
       onProcessingError?.('Upload failed. Please try again.');
+    } finally {
+      setIsUploading(false);
     }
   }, [onFileUpload, onProcessingProgress, onProcessingError]);
 
@@ -79,7 +84,8 @@ const AudioUploader = ({
     accept: {
       'audio/*': ['.wav', '.mp3', '.flac', '.m4a', '.aac', '.ogg', '.wma', '.aiff']
     },
-    multiple: false
+    multiple: false,
+    disabled: isUploading || processingState.isProcessing
   });
 
   const handleProcess = async () => {
@@ -87,10 +93,10 @@ const AudioUploader = ({
       onProcessingStart?.();
       
       // Simulate processing steps with progress updates
-      onProcessingProgress?.(20, 'Preprocessing audio...');
+      onProcessingProgress?.(40, 'Preprocessing audio...');
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      onProcessingProgress?.(40, 'Applying noise reduction...');
+      onProcessingProgress?.(60, 'Applying noise reduction...');
       const result = await processAudio();
       
       if (result.success) {
@@ -121,6 +127,7 @@ const AudioUploader = ({
       await resetSession();
       onReset?.();
       setUploadProgress(0);
+      setIsUploading(false);
     } catch (error) {
       console.error('Reset error:', error);
       onProcessingError?.('Reset failed. Please try again.');
@@ -156,9 +163,9 @@ const AudioUploader = ({
       {/* Upload Area */}
       <motion.div
         {...getRootProps()}
-        className={`upload-area ${isDragActive ? 'drag-active' : ''}`}
-        whileHover={{ scale: 1.01 }}
-        whileTap={{ scale: 0.99 }}
+        className={`upload-area ${isDragActive ? 'drag-active' : ''} ${isUploading ? 'uploading' : ''}`}
+        whileHover={{ scale: isUploading ? 1 : 1.01 }}
+        whileTap={{ scale: isUploading ? 1 : 0.99 }}
       >
         <input {...getInputProps()} />
         
@@ -167,26 +174,37 @@ const AudioUploader = ({
             className="upload-icon"
             animate={{ 
               scale: isDragActive ? 1.2 : 1,
-              rotate: isDragActive ? 360 : 0 
+              rotate: isUploading ? 360 : 0 
             }}
             transition={{ duration: 0.3 }}
           >
-            <Upload size={48} />
+            {isUploading ? (
+              <div className="loading-spinner" />
+            ) : (
+              <Upload size={48} />
+            )}
           </motion.div>
           
           <div className="upload-text">
-            {isDragActive 
-              ? "Drop your audio file here..." 
-              : "Click to select audio file or drag and drop"
+            {isUploading 
+              ? "Uploading your audio file..." 
+              : isDragActive 
+                ? "Drop your audio file here..." 
+                : "Click to select audio file or drag and drop"
             }
           </div>
           
           <div className="upload-hint">
-            Supports WAV, MP3, FLAC, M4A, AAC, OGG, WMA, AIFF (Max: 100MB)
+            Supports WAV, MP3, FLAC, M4A, AAC, OGG, WMA, AIFF (Max: 500MB)
           </div>
           
           {uploadProgress > 0 && uploadProgress < 100 && (
-            <div className="upload-progress">
+            <motion.div 
+              className="upload-progress"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
               <div className="progress-bar">
                 <div 
                   className="progress-fill" 
@@ -194,7 +212,7 @@ const AudioUploader = ({
                 />
               </div>
               <div className="progress-text">{Math.round(uploadProgress)}% uploaded</div>
-            </div>
+            </motion.div>
           )}
         </div>
       </motion.div>
@@ -217,6 +235,14 @@ const AudioUploader = ({
                 {safeSessionData.fileInfo.duration?.toFixed(1)}s
               </div>
             </div>
+            <motion.div
+              className="upload-status"
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.3, type: "spring" }}
+            >
+              <CheckCircle size={20} color="var(--success)" />
+            </motion.div>
           </div>
           
           <div className="file-info-grid">
@@ -241,13 +267,18 @@ const AudioUploader = ({
       )}
 
       {/* Action Buttons */}
-      <div className="action-buttons">
+      <motion.div 
+        className="action-buttons"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+      >
         <motion.button
           className="btn btn-primary"
-          disabled={!safeSessionData.fileUploaded || safeProcessingState.isProcessing}
+          disabled={!safeSessionData.fileUploaded || safeProcessingState.isProcessing || isUploading}
           onClick={handleProcess}
-          whileHover={{ scale: safeProcessingState.isProcessing ? 1 : 1.05 }}
-          whileTap={{ scale: safeProcessingState.isProcessing ? 1 : 0.95 }}
+          whileHover={{ scale: (safeProcessingState.isProcessing || isUploading) ? 1 : 1.05 }}
+          whileTap={{ scale: (safeProcessingState.isProcessing || isUploading) ? 1 : 0.95 }}
         >
           {safeProcessingState.isProcessing ? (
             <>
@@ -276,14 +307,14 @@ const AudioUploader = ({
         <motion.button
           className="btn btn-outline"
           onClick={handleReset}
-          disabled={safeProcessingState.isProcessing}
-          whileHover={{ scale: safeProcessingState.isProcessing ? 1 : 1.05 }}
-          whileTap={{ scale: safeProcessingState.isProcessing ? 1 : 0.95 }}
+          disabled={safeProcessingState.isProcessing || isUploading}
+          whileHover={{ scale: (safeProcessingState.isProcessing || isUploading) ? 1 : 1.05 }}
+          whileTap={{ scale: (safeProcessingState.isProcessing || isUploading) ? 1 : 0.95 }}
         >
           <RefreshCw size={20} />
           Reset
         </motion.button>
-      </div>
+      </motion.div>
 
       {/* Processing Errors */}
       {safeProcessingState.status === 'error' && (
