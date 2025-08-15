@@ -16,7 +16,7 @@ process_status = {}
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key-change-in-prod")
-CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}}, supports_credentials=True)
+CORS(app, resources={r"/api/*": {"origins": ["http://localhost:3000", "http://localhost:5000"]}}, supports_credentials=True)
 
 # Configuration
 UPLOAD_FOLDER = 'uploads'
@@ -40,10 +40,6 @@ except Exception as e:
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['PROCESSED_FOLDER'] = PROCESSED_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
-
-# Create directories
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-os.makedirs(PROCESSED_FOLDER, exist_ok=True)
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -133,13 +129,15 @@ def validate_audio_length(file_path):
 @app.route('/api/upload', methods=['POST'])
 def upload():
     try:
+        logger.info("Processing upload request")
+        
         # Check if file was provided
-        if 'audio' not in request.files:
-            return jsonify({'error': 'No audio file provided'}), 400
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file provided'}), 400
             
-        file = request.files['audio']
-        if file.filename == '':
-            return jsonify({'error': 'No selected file'}), 400
+        file = request.files['file']
+        if not file or file.filename == '':
+            return jsonify({'error': 'Empty file'}), 400
             
         if not allowed_file(file.filename):
             return jsonify({'error': 'File type not supported. Please upload MP3, WAV, FLAC, M4A, AAC, OGG, WMA, or AIFF files.'}), 400
@@ -161,21 +159,28 @@ def upload():
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             os.rename(temp_filepath, filepath)
 
+            # Create session
+            session_id = str(uuid.uuid4())[:8]
+            session['session_id'] = session_id
+            
             # Initialize process status
             process_id = str(uuid.uuid4().hex)
             process_status[process_id] = {
-                'status': 'processing',
+                'status': 'uploaded',
                 'filename': filename,
-                'original_name': file.filename
+                'original_name': file.filename,
+                'session_id': session_id
             }
 
-            # Start processing in background
-            threading.Thread(target=process_audio, args=(filepath, process_id)).start()
+            file_size = os.path.getsize(filepath)
+            logger.info(f"Upload complete: {session_id} ({file_size} bytes)")
 
             return jsonify({
-                'status': 'success',
-                'message': 'File uploaded successfully',
-                'id': process_id
+                'success': True,
+                'session_id': session_id,
+                'filename': file.filename,
+                'file_size': file_size,
+                'process_id': process_id
             })
             
         except Exception as e:
@@ -188,42 +193,6 @@ def upload():
         logger.error(f"Upload failed: {str(e)}")
         error_message = str(e) if not isinstance(e, OSError) else 'Upload failed. Please try again.'
         return jsonify({'error': error_message}), 500
-    try:
-        logger.info("Processing upload request")
-        
-        if 'file' not in request.files:
-            return jsonify({'error': 'No file provided'}), 400
-            
-        file = request.files['file']
-        if not file or file.filename == '':
-            return jsonify({'error': 'Empty file'}), 400
-            
-        filename = secure_filename(file.filename)
-        if not allowed_file(filename):
-            return jsonify({'error': 'File type not supported'}), 400
-            
-        # Create session
-        session_id = str(uuid.uuid4())[:8]
-        session['session_id'] = session_id
-        
-        # Save file quickly
-        ext = filename.rsplit('.', 1)[1].lower()
-        save_path = os.path.join(UPLOAD_FOLDER, f"{session_id}.{ext}")
-        file.save(save_path)
-        
-        file_size = os.path.getsize(save_path)
-        logger.info(f"Upload complete: {session_id} ({file_size} bytes)")
-        
-        return jsonify({
-            'success': True,
-            'session_id': session_id,
-            'filename': filename,
-            'file_size': file_size
-        })
-        
-    except Exception as e:
-        logger.error(f"Upload failed: {str(e)}")
-        return jsonify({'error': 'Upload failed'}), 500
 
 @app.route('/api/process', methods=['POST'])
 def process():
@@ -365,4 +334,4 @@ def reset():
     return jsonify({'success': True})
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=8000, debug=True)

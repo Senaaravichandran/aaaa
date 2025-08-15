@@ -1,6 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Music, Upload, Settings, Info } from 'react-feather';
+import { 
+  Music, 
+  Upload, 
+  Settings, 
+  Info, 
+  Zap, 
+  Shield, 
+  Clock, 
+  Download,
+  Play,
+  CheckCircle,
+  AlertCircle,
+  X,
+  Sparkles
+} from 'react-feather';
 import AudioUploader from './components/AudioUploader';
 import ProcessingStatus from './components/ProcessingStatus';
 import ApiKeyModal from './components/ApiKeyModal';
@@ -25,9 +39,9 @@ function App() {
   
   const [showApiModal, setShowApiModal] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  const [activeTab, setActiveTab] = useState('upload');
 
   useEffect(() => {
-    // Check for existing session on app load
     checkExistingSession();
   }, []);
 
@@ -78,6 +92,7 @@ function App() {
       fileInfo: data.file_info
     });
     addNotification('success', `File uploaded successfully: ${data.filename}`);
+    setActiveTab('process');
   };
 
   const handleProcessingStart = () => {
@@ -146,16 +161,26 @@ function App() {
     });
     
     setShowApiModal(false);
+    setActiveTab('upload');
     addNotification('info', 'Session reset. Ready for new file.');
   };
 
   return (
     <div className="app">
-      {/* Background Animation */}
+      {/* Animated Background */}
       <div className="background-animation">
-        <div className="floating-orb orb-1"></div>
-        <div className="floating-orb orb-2"></div>
-        <div className="floating-orb orb-3"></div>
+        <div className="gradient-orb orb-1"></div>
+        <div className="gradient-orb orb-2"></div>
+        <div className="gradient-orb orb-3"></div>
+        <div className="particles">
+          {[...Array(50)].map((_, i) => (
+            <div key={i} className="particle" style={{
+              left: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 20}s`,
+              animationDuration: `${20 + Math.random() * 10}s`
+            }}></div>
+          ))}
+        </div>
       </div>
 
       {/* Header */}
@@ -167,9 +192,17 @@ function App() {
       >
         <div className="header-content">
           <div className="logo">
-            <Music className="logo-icon" />
-            <span className="logo-text">AudioDenoiseAI</span>
+            <div className="logo-icon-wrapper">
+              <Music className="logo-icon" />
+              <Sparkles className="logo-sparkle" />
+            </div>
+            <div className="logo-text">
+              <span className="logo-primary">Audio</span>
+              <span className="logo-secondary">Denoise</span>
+              <span className="logo-ai">AI</span>
+            </div>
           </div>
+          
           <nav className="nav-links">
             <a href="#features" className="nav-link">Features</a>
             <a href="#about" className="nav-link">About</a>
@@ -189,52 +222,165 @@ function App() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 0.2 }}
         >
+          <div className="hero-badge">
+            <Zap size={16} />
+            <span>AI-Powered Audio Enhancement</span>
+          </div>
+          
           <h1 className="hero-title">
-            Professional Audio Denoising
+            Professional Audio
+            <span className="hero-highlight"> Denoising</span>
           </h1>
+          
           <p className="hero-subtitle">
-            Advanced machine learning-powered noise reduction system that delivers professional-grade 
-            audio cleaning with spectral subtraction and intelligent filtering algorithms.
+            Transform your audio with cutting-edge machine learning technology. 
+            Remove noise, enhance clarity, and achieve studio-quality results in seconds.
           </p>
           
           <div className="hero-stats">
             <div className="stat">
-              <div className="stat-number">99.9%</div>
-              <div className="stat-label">Noise Reduction</div>
+              <div className="stat-icon">
+                <Shield size={24} />
+              </div>
+              <div className="stat-content">
+                <div className="stat-number">99.9%</div>
+                <div className="stat-label">Noise Reduction</div>
+              </div>
             </div>
             <div className="stat">
-              <div className="stat-number">8+</div>
-              <div className="stat-label">Audio Formats</div>
+              <div className="stat-icon">
+                <Clock size={24} />
+              </div>
+              <div className="stat-content">
+                <div className="stat-number">8+</div>
+                <div className="stat-label">Audio Formats</div>
+              </div>
             </div>
             <div className="stat">
-              <div className="stat-number">ML</div>
-              <div className="stat-label">Powered</div>
+              <div className="stat-icon">
+                <Zap size={24} />
+              </div>
+              <div className="stat-content">
+                <div className="stat-number">ML</div>
+                <div className="stat-label">Powered</div>
+              </div>
             </div>
           </div>
         </motion.section>
 
-        {/* Processing Card */}
+        {/* Main Processing Interface */}
         <motion.div 
-          className="processing-card"
+          className="processing-interface"
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.8, delay: 0.4 }}
         >
-          <AudioUploader 
-            onFileUpload={handleFileUpload}
-            onProcessingStart={handleProcessingStart}
-            onProcessingProgress={handleProcessingProgress}
-            onProcessingComplete={handleProcessingComplete}
-            onProcessingError={handleProcessingError}
-            onReset={handleReset}
-            sessionData={sessionData}
-            processingState={processingState}
-          />
-          
-          <ProcessingStatus 
-            processingState={processingState}
-            sessionData={sessionData}
-          />
+          {/* Tab Navigation */}
+          <div className="tab-navigation">
+            <button 
+              className={`tab-button ${activeTab === 'upload' ? 'active' : ''}`}
+              onClick={() => setActiveTab('upload')}
+            >
+              <Upload size={20} />
+              <span>Upload Audio</span>
+            </button>
+            <button 
+              className={`tab-button ${activeTab === 'process' ? 'active' : ''}`}
+              onClick={() => setActiveTab('process')}
+              disabled={!sessionData.fileUploaded}
+            >
+              <Play size={20} />
+              <span>Process</span>
+            </button>
+            <button 
+              className={`tab-button ${activeTab === 'download' ? 'active' : ''}`}
+              onClick={() => setActiveTab('download')}
+              disabled={!sessionData.fileProcessed}
+            >
+              <Download size={20} />
+              <span>Download</span>
+            </button>
+          </div>
+
+          {/* Tab Content */}
+          <div className="tab-content">
+            {activeTab === 'upload' && (
+              <motion.div
+                key="upload"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <AudioUploader 
+                  onFileUpload={handleFileUpload}
+                  onProcessingStart={handleProcessingStart}
+                  onProcessingProgress={handleProcessingProgress}
+                  onProcessingComplete={handleProcessingComplete}
+                  onProcessingError={handleProcessingError}
+                  onReset={handleReset}
+                  sessionData={sessionData}
+                  processingState={processingState}
+                />
+              </motion.div>
+            )}
+            
+            {activeTab === 'process' && (
+              <motion.div
+                key="process"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <ProcessingStatus 
+                  processingState={processingState}
+                  sessionData={sessionData}
+                  onProcess={() => {
+                    // Trigger processing
+                    const processButton = document.querySelector('.btn-primary');
+                    if (processButton && !processButton.disabled) {
+                      processButton.click();
+                    }
+                  }}
+                />
+              </motion.div>
+            )}
+            
+            {activeTab === 'download' && (
+              <motion.div
+                key="download"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.3 }}
+                className="download-section"
+              >
+                <div className="download-content">
+                  <div className="download-icon">
+                    <CheckCircle size={64} />
+                  </div>
+                  <h3 className="download-title">Processing Complete!</h3>
+                  <p className="download-description">
+                    Your audio has been successfully denoised and enhanced. 
+                    Download the processed file below.
+                  </p>
+                  <button 
+                    className="btn btn-primary btn-large"
+                    onClick={() => {
+                      const downloadButton = document.querySelector('.btn-secondary');
+                      if (downloadButton && !downloadButton.disabled) {
+                        downloadButton.click();
+                      }
+                    }}
+                  >
+                    <Download size={24} />
+                    Download Enhanced Audio
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </div>
         </motion.div>
 
         {/* Features Section */}
@@ -246,28 +392,38 @@ function App() {
           transition={{ duration: 1 }}
           viewport={{ once: true }}
         >
-          <h2 className="section-title">Advanced Features</h2>
+          <div className="section-header">
+            <h2 className="section-title">Advanced Features</h2>
+            <p className="section-subtitle">
+              Powered by cutting-edge AI technology for professional audio enhancement
+            </p>
+          </div>
+          
           <div className="features-grid">
             {[
               {
-                icon: <Settings />,
-                title: "ML-Powered Processing",
-                description: "Advanced spectral subtraction and Wiener filtering algorithms for superior noise reduction."
+                icon: <Zap />,
+                title: "AI-Powered Processing",
+                description: "Advanced neural networks and spectral analysis for superior noise reduction and audio enhancement.",
+                color: "var(--primary)"
               },
               {
                 icon: <Upload />,
                 title: "Universal Format Support",
-                description: "Supports all major audio formats with automatic conversion and normalization."
+                description: "Supports all major audio formats with automatic conversion and intelligent format detection.",
+                color: "var(--secondary)"
               },
               {
-                icon: <Info />,
+                icon: <Clock />,
                 title: "Real-time Processing",
-                description: "Fast, efficient processing with live progress tracking and status updates."
+                description: "Lightning-fast processing with live progress tracking and instant results delivery.",
+                color: "var(--accent)"
               },
               {
-                icon: <Music />,
+                icon: <Shield />,
                 title: "Professional Grade",
-                description: "Enterprise-level audio processing suitable for professional audio production."
+                description: "Enterprise-level audio processing suitable for professional studios and broadcast applications.",
+                color: "var(--success)"
               }
             ].map((feature, index) => (
               <motion.div 
@@ -279,7 +435,7 @@ function App() {
                 viewport={{ once: true }}
                 whileHover={{ y: -5, scale: 1.02 }}
               >
-                <div className="feature-icon">
+                <div className="feature-icon" style={{ color: feature.color }}>
                   {feature.icon}
                 </div>
                 <h3 className="feature-title">{feature.title}</h3>
@@ -301,12 +457,16 @@ function App() {
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: 300, opacity: 0 }}
               transition={{ duration: 0.3 }}
-              onClick={() => removeNotification(notification.id)}
             >
               <div className="notification-content">
                 {notification.message}
               </div>
-              <button className="notification-close">×</button>
+              <button 
+                className="notification-close"
+                onClick={() => removeNotification(notification.id)}
+              >
+                <X size={16} />
+              </button>
             </motion.div>
           ))}
         </AnimatePresence>
